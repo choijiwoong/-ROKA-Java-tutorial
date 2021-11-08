@@ -39,5 +39,13 @@ public class Main {
 			boolean isEqual="3".equals("2");
 			System.out.println("height is high!");
 		}
+		
+		//2-3. char
+		char a1='a';//char value
+		char a2=97;//ascii code value
+		char a3='\u0061';//unicode value
+		System.out.println(a1);
+		System.out.println(a2);
+		System.out.println(a3);
 	}
 }
