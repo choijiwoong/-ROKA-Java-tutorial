@@ -1,13 +1,13 @@
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
+import java.io.InputStream;//get by System.in & read by byte.
+import java.io.InputStreamReader;//same to InputStream & read by char
+import java.io.BufferedReader;//same to InputStreamReader & read by String. by method read_line, we can get String object to char(InputStreamReader)
 
-import java.util.Scanner;
+import java.util.Scanner;//System.in as argument
 
 
 public class Main{
-	public static void main(String[] args) throws IOException{//we have to handle IOexception
+	public static void main(String[] args) throws IOException{//we have to handle IOException
 		//[1. Console Input]
 		//way.1 InputStream to variables
 //		InputStream in=System.in;//abc
@@ -46,12 +46,12 @@ public class Main{
 //		InputStreamReader reader=new InputStreamReader(in);//char
 //		BufferedReader br=new BufferedReader(reader);//String
 //		
-//		String a=br.readLine();
+//		String a=br.readLine();//No br.readLine(a); readLine return String object.
 //		System.out.println(a);
 		
 		//way5. Scanner; .next(token), .nextLine(line), .nextInt(integer)
 		Scanner sc=new Scanner(System.in);//it needs InputStream as argument of Constructor
-		System.out.println(sc.next());//.next method reads one Token
+		System.out.println(sc.next());//.next method reads one Token like scanf
 		
 		//[2. Console Output]
 		//System.out is object of PrintStream class.
