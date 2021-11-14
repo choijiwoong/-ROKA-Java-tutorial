@@ -53,8 +53,8 @@ interface myPrint{ void showSomething(String str); }
 /*
 1.	람다식을 구현하기 위해서는 함수형 인터페이스를 만들고, 메소드를 만들고 main에서 람다식을 정의한다. 함수형 인터페이스는 하나의 메소드만 허용한다.
 2.	()->에서 ()는 매개변수가 들어가는 자리로 매개 변수가 없다면 아래와 같이 비운 뒤에도 구현이 가능하다.
-	ALambda myLam=()->{ System.out.println("Lambda Test"); };
+	ALamda myLam=()->{ System.out.println("Lambda Test"); };
 	myLam.show();
 	
-	interface ALambda{ void show(); }
+	interface ALamda{ void show(); }
 */
