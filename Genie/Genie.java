@@ -1,51 +1,61 @@
 import java.util.Scanner;
 
-import java.io.BufferedWriter;
+import java.io.BufferedReader;//FILE IO, Exception
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-
-import java.io.BufferedReader;
-import java.io.FileReader;
-
-import java.util.ArrayList;
-
 import java.io.FileNotFoundException;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 
 public class Genie{
 	public static void main(String[] args){
 		
-		
 		//---practice_section
 		try{
-			entry.entry_execution();
+			//entry.entry_execution();
 		}catch(Exception e){ e.printStackTrace(); }
 		
-		int menu;
 		while(true){
-			System.out.println("Choose work!\n 1. Search Song\n2. Play Song in playlist");
+			System.out.println("Choose work!\n1. Search Song\n2. Play Song in playlist");
 			try{
 				Scanner sc=new Scanner(System.in);
-				menu=sc.nextInt();
+				int menu=sc.nextInt();
+				//sc.close();
 				if(menu==1){
-					searchSong.searchSong_execution();
+					try{
+						searchSong.searchSong_execution();
+					}catch(Exception e){ e.printStackTrace(); }
 				} else if(menu==2){
 					playSong.playSong_execution();
 				} else{
 					System.out.println("Wrong work! Try again");
 				}
 			}catch(Exception e){ e.printStackTrace(); }
+			
+			System.out.println("PROGERAM DONE!!!");
+			return;
 		}
 	}
 }
 
-class searchSong{
-	public static void searchSong_execution() throws IOException{
+class searchSong{//use Jsoup
+	public static void searchSong_execution() throws Exception{
 		//get title
 		//search & download
 		//add
 		Scanner sc=new Scanner(System.in);
 		System.out.println("Enter title of song: ");
-		String searchWord=sc.next();
+		String searchWord="https://www.youtube.com/results?search_query=";
+		searchWord+=sc.next();
+		
+		Document doc=Jsoup.connect(searchWord).get();
+		Elements contents=doc.select(".style-scope ytd-video-renderer");//Exception NoClassDefFoundError
+		String text=contents.text();
+		System.out.println(text);
+		
 	}
 }
 
@@ -70,6 +80,7 @@ class entry{
 			System.out.println("[Welcome to Genie!]");
 			System.out.println("Please login or register first.\n1. login\n2. register");
 			int menu=sc.nextInt();
+			
 			if(menu==1){
 				try{
 					entry.login();
