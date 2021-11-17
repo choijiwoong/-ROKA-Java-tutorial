@@ -6,9 +6,20 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 
-import org.jsoup.Jsoup;
+import org.jsoup.Jsoup;//jsoup
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.nio.file.Path;//selenium
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;//selenium
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 
 public class Genie{
 	public static void main(String[] args){
@@ -51,11 +62,36 @@ class searchSong{//use Jsoup
 		String searchWord="https://www.youtube.com/results?search_query=";
 		searchWord+=sc.next();
 		
-		Document doc=Jsoup.connect(searchWord).get();
-		Elements contents=doc.select(".style-scope ytd-video-renderer");//Exception NoClassDefFoundError
-		String text=contents.text();
-		System.out.println(text);
+		//***First*** FeedBack_Youtube uses CSR(Client-Side Rendering) not SSR(Server-Side Rendering). so use selenium that support Xpath regardless of excuting speed.
+		//System.out.println("searchWord: "+searchWord);
+		//Document doc=Jsoup.connect(searchWord).get();//Document connection is Success! not selected!
+		//Elements contents=doc.select("#video-title");
+		//System.out.println("contents: "+contents.first());
 		
+		//set path of webdriver
+		System.setProperty("webdriver.chrome.driver", "C:\\Users\\admin0!\\Desktop\\ChromeWebdriver\\chromedriver.exe");
+		//Set option of WebDriver
+		ChromeOptions options=new ChromeOptions();//
+		options.addArguments("--start-maximized");//full-screen
+		options.addArguments("--disable-popup-blocking");//ignore popup
+		options.addArguments("--disable-default-apps");
+		//Make WebDriver object
+		ChromeDriver driver=new ChromeDriver(options);
+		//Make empty tab
+		driver.executeScript("window.open('about:blank', '_blank');");
+		//get tab list
+		List<String> tabs=new ArrayList<String>(driver.getWindowHandles());
+		
+		//switch to first tab
+		driver.switchTo().window(tabs.get(0));
+		//request
+		driver.get(searchWord);
+		
+		WebElement page1_title=driver.findElement(By.xpath("//*[@id=\"video-title\"]"));
+		if(page1_title!=null)
+			System.out.println(page1_title.getText());
+		driver.close();
+		//https://heodolf.tistory.com/103
 	}
 }
 
