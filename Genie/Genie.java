@@ -6,20 +6,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 
-import org.jsoup.Jsoup;//jsoup
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
-import java.nio.file.Path;//selenium
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;//selenium
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 
 public class Genie{
 	public static void main(String[] args){
@@ -35,15 +27,13 @@ public class Genie{
 				Scanner sc=new Scanner(System.in);
 				int menu=sc.nextInt();
 				//sc.close();
-				if(menu==1){
-					try{
-						searchSong.searchSong_execution();
-					}catch(Exception e){ e.printStackTrace(); }
-				} else if(menu==2){
+				if(menu==1)
+					searchSong.searchSong_execution();
+				else if(menu==2)
 					playSong.playSong_execution();
-				} else{
+				else
 					System.out.println("Wrong work! Try again");
-				}
+				
 			}catch(Exception e){ e.printStackTrace(); }
 			
 			System.out.println("PROGERAM DONE!!!");
@@ -53,45 +43,87 @@ public class Genie{
 }
 
 class searchSong{//use Jsoup
-	public static void searchSong_execution() throws Exception{
+	private static WebDriver driver;
+	
+	public static void searchSong_execution(){
+		downloadSong(searchSong());
+		//mp3 file is in C:\Users\admin0!\Downloads now.
+	}
+	
+	public static String searchSong(){
 		//get title
-		//search & download
-		//add
-		Scanner sc=new Scanner(System.in);
-		System.out.println("Enter title of song: ");
-		String searchWord="https://www.youtube.com/results?search_query=";
-		searchWord+=sc.next();
+			//search & download
+			//add
+			Scanner sc=new Scanner(System.in);
+			System.out.println("Enter title of song: ");
+			String youtubeSearch="https://www.youtube.com/results?search_query=";
+			String searchWord=sc.next();
+			
+			//***First*** FeedBack_Youtube uses CSR(Client-Side Rendering) not SSR(Server-Side Rendering). so use selenium that support Xpath regardless of excuting speed.
+			//System.out.println("searchWord: "+searchWord);
+			//Document doc=Jsoup.connect(searchWord).get();//Document connection is Success! not selected!
+			//Elements contents=doc.select("#video-title");
+			//System.out.println("contents: "+contents.first());
+				
+			//***Second*** FeedBack_make Driver object.
+			//java.util.ServiceConfigurationError: org.openqa.selenium.remote.http.HttpClient$Factory: Error accessing configuration file
+			//Caused by: java.nio.file.NoSuchFileException: C:\Users\admin0
+			//just do continue, this error will be handled in weekend.
+				
+			System.setProperty("webdriver.chrome.driver", "C:/Program Files/ChromeWebdriver/chromedriver.exe");
+			ChromeOptions options=new ChromeOptions();
+			options.addArguments("--start-maximized");
+			options.addArguments("--disable-popup-blocking");
+				
+			driver=new ChromeDriver(options);
+			try {
+				driver.get(youtubeSearch+searchWord);//List page of search word on youtube.
+				WebElement result=driver.findElement(By.xpath("//*[@id=\"video-title\"]"));//get element of first vedio-title's tag with like href="/watch?v=Nd-kL7Txqpk"
+				if(result!=null)
+					System.out.println(result);
+			} catch(Exception e){
+				e.printStackTrace();
+				return null;
+			}finally { driver.quit(); }
+				
+			//Proecess of result to get href to first video-title link. like href="/watch?v=Nd-kL7Txqpk"
+				
+			String videoLink=new String();//like "ND-kL7Txqpk"
+				
+			String convertLink=new String("https://320ytmp3.com/ko3/download?type=ytmp3&url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D"+videoLink);
+			return convertLink;
+	}
+	
+	public static int downloadSong(String convertLink){
+		ChromeOptions options=new ChromeOptions();
+		options.addArguments("--start-maximized");
+		options.addArguments("--disable-popup-blocking");
 		
-		//***First*** FeedBack_Youtube uses CSR(Client-Side Rendering) not SSR(Server-Side Rendering). so use selenium that support Xpath regardless of excuting speed.
-		//System.out.println("searchWord: "+searchWord);
-		//Document doc=Jsoup.connect(searchWord).get();//Document connection is Success! not selected!
-		//Elements contents=doc.select("#video-title");
-		//System.out.println("contents: "+contents.first());
+		driver=new ChromeDriver(options);
+		try {
+			driver.get(convertLink);
+			WebElement convertButton=driver.findElement(By.xpath("//*[@id=\"cvt-btn\"]"));
+			WebElement lengthVideo=driver.findElement(By.xpath("/html/body/section[1]/div/div/div[1]/p"));//We have to wait for downloading by length of video
+			String Slength=lengthVideo.getAttribute("p");//get videoLength as string
+			int ilength=Integer.parseInt(Slength);
+			convertButton.click();
+			//Convert Start 
+			Thread.sleep(15000*ilength);//we have to get best length for wait depending on videolength.
+			
+			//Suppose converting is ended.(We have to check it too by using for loop by whether ths button's context is change to download not convert)
+			WebElement downloadButton=driver.findElement(By.xpath("//*[@id=\"mp3-dl-btn\"]"));
+			downloadButton.click();
+			Thread.sleep(5000*ilength);//optimize  too.
+			//Suppose hard download finish
+			//mp3 file is in C:\Users\admin0!\Downloads
+				
+			//file move, make directory need
+		}catch (Exception e) {
+			e.printStackTrace();
+			return 0;
+		}finally { driver.quit(); }
 		
-		//set path of webdriver
-		System.setProperty("webdriver.chrome.driver", "C:\\Users\\admin0!\\Desktop\\ChromeWebdriver\\chromedriver.exe");
-		//Set option of WebDriver
-		ChromeOptions options=new ChromeOptions();//
-		options.addArguments("--start-maximized");//full-screen
-		options.addArguments("--disable-popup-blocking");//ignore popup
-		options.addArguments("--disable-default-apps");
-		//Make WebDriver object
-		ChromeDriver driver=new ChromeDriver(options);
-		//Make empty tab
-		driver.executeScript("window.open('about:blank', '_blank');");
-		//get tab list
-		List<String> tabs=new ArrayList<String>(driver.getWindowHandles());
-		
-		//switch to first tab
-		driver.switchTo().window(tabs.get(0));
-		//request
-		driver.get(searchWord);
-		
-		WebElement page1_title=driver.findElement(By.xpath("//*[@id=\"video-title\"]"));
-		if(page1_title!=null)
-			System.out.println(page1_title.getText());
-		driver.close();
-		//https://heodolf.tistory.com/103
+		return 1;	
 	}
 }
 
