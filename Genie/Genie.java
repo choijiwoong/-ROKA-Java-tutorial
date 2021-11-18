@@ -4,14 +4,26 @@ import java.io.BufferedReader;//FILE IO, Exception
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.StandardCopyOption;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;//selenium
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+
+import com.google.common.io.Files;
+
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+
+import java.io.File;//mkdir, copy song to playlist
+import java.io.FileInputStream;
+import java.io.FilenameFilter;
+import java.io.BufferedWriter;
+
+
 
 public class Genie{
 	public static void main(String[] args){
@@ -44,10 +56,12 @@ public class Genie{
 
 class searchSong{//use Jsoup
 	private static WebDriver driver;
+	private static int playlistSize=0;
 	
 	public static void searchSong_execution(){
 		downloadSong(searchSong());
 		//mp3 file is in C:\Users\admin0!\Downloads now.
+		movePlaylist();
 	}
 	
 	public static String searchSong(){
@@ -124,6 +138,57 @@ class searchSong{//use Jsoup
 		}finally { driver.quit(); }
 		
 		return 1;	
+	}
+	
+	public static int movePlaylist() {
+		//get .mp3 file to File object
+		File dir=new File("C:\\Users\\admin0!\\Downloads");//change by UserName
+		FilenameFilter filter=new FilenameFilter() {
+			public boolean accept(File f, String name) {
+				return name.endsWith(".mp3");
+			}
+		};//for some of accuracy
+		File files[]=dir.listFiles(filter);
+		//our downloaded song object is in files[0] now.
+		
+		
+		//copy to playlist directory of Genie
+		if(files[0]!=null) {
+			//Check & Make playlistFolder
+			File playlistFolder=new File("C:/Users/admin0!/Desktop/_2jimo/Java/Genie/Geniw/src/Playlist");
+			if(!playlistFolder.exists()) {//check directory is exist
+				try {
+					playlistFolder.mkdir();
+				}catch(Exception e) {
+					e.printStackTrace();
+					return 0;
+				}
+			}
+			
+			//copy by stream
+			File newFile=new File(new String("C:/Users/admin0!/Desktop/_2jimo/Java/Genie/Geniw/src/Playlist/Song"+(playlistSize+1)));
+			try {
+				FileInputStream input=new FileInputStream(files[0]);
+				FileOutputStream output=new FileOutputStream(newFile);
+				
+				byte[] buf=new byte[1024];
+				
+				int readData;
+				while((readData=input.read(buf))>0)
+					output.write(buf,0,readData);
+				
+				input.close();
+				output.close();
+			}catch(Exception e) {
+				e.printStackTrace();
+				return 0;
+			}
+		}else {
+			try {
+				throw new Exception("No mp3 file in download file");
+			}catch(Exception e) {e.printStackTrace();}
+		}
+		return 1;
 	}
 }
 
