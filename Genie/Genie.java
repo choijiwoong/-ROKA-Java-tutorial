@@ -57,14 +57,17 @@ public class Genie{
 class searchSong{//use Jsoup
 	private static WebDriver driver;
 	private static int playlistSize=0;
+	private static String youtubeLink;
+	private static String downloadHtml=new String("https://loader.to/ko26/youtube-wav-converter.html");;
 	
 	public static void searchSong_execution(){
-		downloadSong(searchSong());
+		searchSong();//Set youtubeLink variable with return int
+		downloadSong();
 		//mp3 file is in C:\Users\admin0!\Downloads now.
 		movePlaylist();
 	}
 	
-	public static String searchSong(){
+	public static int searchSong(){
 		//get title
 			//search & download
 			//add
@@ -97,41 +100,42 @@ class searchSong{//use Jsoup
 					System.out.println(result);
 			} catch(Exception e){
 				e.printStackTrace();
-				return null;
+				return 0;
 			}finally { driver.quit(); }
 				
 			//Proecess of result to get href to first video-title link. like href="/watch?v=Nd-kL7Txqpk"
 				
 			String videoLink=new String();//like "ND-kL7Txqpk"
-				
-			String convertLink=new String("https://320ytmp3.com/ko3/download?type=ytmp3&url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D"+videoLink);
-			return convertLink;
+			youtubeLink=new String("https://www.youtube.com/"+videoLink);//set private variable
+	
+			return 1;
 	}
 	
-	public static int downloadSong(String convertLink){
+	public static int downloadSong(){
+		if(youtubeLink==null) {//check is ready for download
+			try {
+				throw new Exception("YoutubeLink is not sent!");
+			}catch(Exception e) {e.printStackTrace();}
+			return 0;
+		}
 		ChromeOptions options=new ChromeOptions();
 		options.addArguments("--start-maximized");
 		options.addArguments("--disable-popup-blocking");
 		
 		driver=new ChromeDriver(options);
 		try {
-			driver.get(convertLink);
-			WebElement convertButton=driver.findElement(By.xpath("//*[@id=\"cvt-btn\"]"));
-			WebElement lengthVideo=driver.findElement(By.xpath("/html/body/section[1]/div/div/div[1]/p"));//We have to wait for downloading by length of video
-			String Slength=lengthVideo.getAttribute("p");//get videoLength as string
-			int ilength=Integer.parseInt(Slength);
-			convertButton.click();
-			//Convert Start 
-			Thread.sleep(15000*ilength);//we have to get best length for wait depending on videolength.
+			driver.get(downloadHtml);
+			WebElement inputURL=driver.findElement(By.xpath("//*[@id=\"link\"]"));
+			inputURL.sendKeys(youtubeLink);
+			WebElement convertStartButton=driver.findElement(By.xpath("//*[@id=\"load\"]"));
+			convertStartButton.click();
 			
-			//Suppose converting is ended.(We have to check it too by using for loop by whether ths button's context is change to download not convert)
-			WebElement downloadButton=driver.findElement(By.xpath("//*[@id=\"mp3-dl-btn\"]"));
-			downloadButton.click();
-			Thread.sleep(5000*ilength);//optimize  too.
-			//Suppose hard download finish
-			//mp3 file is in C:\Users\admin0!\Downloads
-				
-			//file move, make directory need
+			Thread.sleep(10000);//convert time
+			WebElement downloadStartButton=driver.findElement(By.xpath("//*[@id=\"7046dfee98b0d1a28798a0c94c9_downloadButton\"]"));
+			downloadStartButton.click();
+			Thread.sleep(30000);//download time
+			//****third feedback****
+			//check download by download's file list[0] element's name compare not sleep;
 		}catch (Exception e) {
 			e.printStackTrace();
 			return 0;
