@@ -4,7 +4,6 @@ import java.io.BufferedReader;//FILE IO, Exception
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.StandardCopyOption;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 
@@ -13,67 +12,91 @@ import org.openqa.selenium.WebElement;//selenium
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 
-import com.google.common.io.Files;
-
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-
 import java.io.File;//mkdir, copy song to playlist
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
-import java.io.BufferedWriter;
 
+import javax.sound.sampled.AudioInputStream;//.wav
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 
 
 public class Genie{
 	public static void main(String[] args){
-		
-		//---practice_section
-		try{
-			//entry.entry_execution();
-		}catch(Exception e){ e.printStackTrace(); }
+		entry.entry_execution();
 		
 		while(true){
 			System.out.println("Choose work!\n1. Search Song\n2. Play Song in playlist");
 			try{
 				Scanner sc=new Scanner(System.in);
 				int menu=sc.nextInt();
-				//sc.close();
+				
 				if(menu==1)
 					searchSong.searchSong_execution();
 				else if(menu==2)
 					playSong.playSong_execution();
 				else
 					System.out.println("Wrong work! Try again");
-				
-			}catch(Exception e){ e.printStackTrace(); }
+			}catch(Exception e) {e.printStackTrace();}
 			
-			System.out.println("PROGERAM DONE!!!");
+			System.out.println("\n");
+		}
+	}
+}
+
+class playSong{
+	public static void playSong_execution(){
+		int playlistSize=searchSong.getPlaylistSize();
+		if(playlistSize==0) {
+			System.out.println("No music in playlist!");
 			return;
+		}
+		
+		for(int i=1; i<=playlistSize; i++) {
+			try {
+				File wavFile=new File("/playlist/Song"+i+".wav");
+				AudioInputStream wavStream=AudioSystem.getAudioInputStream(wavFile);
+				Clip wavClip=AudioSystem.getClip();
+				
+				wavClip.open(wavStream);
+				wavClip.start();
+				System.out.println("music."+i+" is starting...");
+				
+				Thread.sleep(wavClip.getMicrosecondLength()/1000);
+			}catch(Exception e) { e.printStackTrace(); }
 		}
 	}
 }
 
 class searchSong{//use Jsoup
-	private static WebDriver driver;
-	private static int playlistSize=0;
-	private static String youtubeLink;
-	private static String downloadHtml=new String("https://loader.to/ko26/youtube-wav-converter.html");;
+	private static WebDriver driver;//for ChromeDriver object
+	private static int playlistSize=0;//number of songs is playlist
+	 public static int getPlaylistSize() { return playlistSize; }//return playlistsize for using in other class method.
+	private static String youtubeLink;//youtube like to searched video for using other method in this class
+	private static String downloadHtml=new String("https://loader.to/ko26/youtube-wav-converter.html");//we will use this site for downloading .wav file from youtube video
+	private static String youtubeSearch="https://www.youtube.com/results?search_query=";//use this url for search youtube video by word
 	
 	public static void searchSong_execution(){
-		searchSong();//Set youtubeLink variable with return int
-		downloadSong();
-		//mp3 file is in C:\Users\admin0!\Downloads now.
-		movePlaylist();
+		if(!search())
+			System.out.println("[Error in searchSong]");
+		System.out.println("searchSong .....Good");
+		//set private youtubeLink
+		
+		if(!downloadSong())
+			System.out.println("[Error in downloadSong]");
+		System.out.println("downloadSong .....Good");
+		//.wav file is in C:\Users\admin0!\Downloads now.
+		
+		if(!movePlaylist())
+			System.out.println("[Error in movePlaylist]");
+		System.out.println("movPlaylist .....Good");
+		//.wav file is in Genie/playlist/
 	}
 	
-	public static int searchSong(){
-		//get title
-			//search & download
-			//add
+	public static boolean search(){
 			Scanner sc=new Scanner(System.in);
 			System.out.println("Enter title of song: ");
-			String youtubeSearch="https://www.youtube.com/results?search_query=";
 			String searchWord=sc.next();
 			
 			//***First*** FeedBack_Youtube uses CSR(Client-Side Rendering) not SSR(Server-Side Rendering). so use selenium that support Xpath regardless of excuting speed.
@@ -86,13 +109,14 @@ class searchSong{//use Jsoup
 			//java.util.ServiceConfigurationError: org.openqa.selenium.remote.http.HttpClient$Factory: Error accessing configuration file
 			//Caused by: java.nio.file.NoSuchFileException: C:\Users\admin0
 			//just do continue, this error will be handled in weekend.
+			
+			String path=System.getProperty("user.dir");//get this_path(preparing execution of chromedriver)
+			System.setProperty("webdriver.chrome.driver", path+"/src/ChromeWebdriver/chromedriver.exe");//set chromedriver's location
+			ChromeOptions options=new ChromeOptions();//make options object for argument of ChromeDriver's constructor
+			options.addArguments("--start-maximized");//monitor max
+			options.addArguments("--disable-popup-blocking");//no popup
 				
-			System.setProperty("webdriver.chrome.driver", "C:/Program Files/ChromeWebdriver/chromedriver.exe");
-			ChromeOptions options=new ChromeOptions();
-			options.addArguments("--start-maximized");
-			options.addArguments("--disable-popup-blocking");
-				
-			driver=new ChromeDriver(options);
+			driver=new ChromeDriver(options);//Make Webdriver object!
 			try {
 				driver.get(youtubeSearch+searchWord);//List page of search word on youtube.
 				WebElement result=driver.findElement(By.xpath("//*[@id=\"video-title\"]"));//get element of first vedio-title's tag with like href="/watch?v=Nd-kL7Txqpk"
@@ -100,7 +124,7 @@ class searchSong{//use Jsoup
 					System.out.println(result);
 			} catch(Exception e){
 				e.printStackTrace();
-				return 0;
+				return false;
 			}finally { driver.quit(); }
 				
 			//Proecess of result to get href to first video-title link. like href="/watch?v=Nd-kL7Txqpk"
@@ -108,15 +132,15 @@ class searchSong{//use Jsoup
 			String videoLink=new String();//like "ND-kL7Txqpk"
 			youtubeLink=new String("https://www.youtube.com/"+videoLink);//set private variable
 	
-			return 1;
+			return true;
 	}
 	
-	public static int downloadSong(){
+	public static boolean downloadSong(){
 		if(youtubeLink==null) {//check is ready for download
 			try {
 				throw new Exception("YoutubeLink is not sent!");
 			}catch(Exception e) {e.printStackTrace();}
-			return 0;
+			return false;
 		}
 		ChromeOptions options=new ChromeOptions();
 		options.addArguments("--start-maximized");
@@ -138,18 +162,18 @@ class searchSong{//use Jsoup
 			//check download by download's file list[0] element's name compare not sleep;
 		}catch (Exception e) {
 			e.printStackTrace();
-			return 0;
+			return false;
 		}finally { driver.quit(); }
 		
-		return 1;	
+		return true;
 	}
 	
-	public static int movePlaylist() {
+	public static boolean movePlaylist() {
 		//get .mp3 file to File object
 		File dir=new File("C:\\Users\\admin0!\\Downloads");//change by UserName
 		FilenameFilter filter=new FilenameFilter() {
 			public boolean accept(File f, String name) {
-				return name.endsWith(".mp3");
+				return name.endsWith(".wav");
 			}
 		};//for some of accuracy
 		File files[]=dir.listFiles(filter);
@@ -165,12 +189,12 @@ class searchSong{//use Jsoup
 					playlistFolder.mkdir();
 				}catch(Exception e) {
 					e.printStackTrace();
-					return 0;
+					return false;
 				}
 			}
 			
 			//copy by stream
-			File newFile=new File(new String("C:/Users/admin0!/Desktop/_2jimo/Java/Genie/Geniw/src/Playlist/Song"+(playlistSize+1)));
+			File newFile=new File(new String("C:/Users/admin0!/Desktop/_2jimo/Java/Genie/Geniw/src/Playlist/Song"+(++playlistSize)+".wav"));
 			try {
 				FileInputStream input=new FileInputStream(files[0]);
 				FileOutputStream output=new FileOutputStream(newFile);
@@ -185,32 +209,19 @@ class searchSong{//use Jsoup
 				output.close();
 			}catch(Exception e) {
 				e.printStackTrace();
-				return 0;
+				return false;
 			}
 		}else {
 			try {
 				throw new Exception("No mp3 file in download file");
 			}catch(Exception e) {e.printStackTrace();}
 		}
-		return 1;
-	}
-}
-
-class playSong{
-	public static void playSong_execution() throws IOException{
-		
-	}
-}
-
-class playlist{//save as .out
-
-	class song{
-		
+		return true;
 	}
 }
 
 class entry{
-	public static void entry_execution() throws IOException{//throws because of Scanner
+	public static void entry_execution(){//throws because of Scanner
 		while(true){
 			Scanner sc=new Scanner(System.in);
 			
@@ -219,24 +230,20 @@ class entry{
 			int menu=sc.nextInt();
 			
 			if(menu==1){
-				try{
-					entry.login();
-					break;//escape
-				}catch(IOException e){ e.printStackTrace(); }
+				if(entry.login()) {
+					return;//escape
+				}
 			}else if(menu==2){
-				try{
-					entry.register();
-					continue;
-				}catch(IOException e){}//we have to handle exception
+				entry.register();
+				continue;
 			}else{
 				System.out.println("Try Again!");
 				continue;
 			}
 		}
-		return;
 	}
 	
-	public static boolean register() throws IOException{//throws because of Scanner
+	public static boolean register(){//throws because of Scanner
 		Scanner sc=new Scanner(System.in);
 		
 		System.out.println("Type your new Id: ");
@@ -245,7 +252,7 @@ class entry{
 		String userInformation_buffer=new String(id+" "+sc.next());//"id password"
 		
 		if(isExistDB(userInformation_buffer)){//check same id
-			System.out.println("[Register Failed!] Invalid Information!");
+			System.out.println("Already exist!");
 			return false;
 		} else{
 			try{//file is already exist
@@ -257,20 +264,27 @@ class entry{
 				return true;
 			}catch(FileNotFoundException e){//file is not exist(cannot use append mode)
 				//make file.
-				FileWriter fw2=new FileWriter("userInformation.txt");//write mode
-				userInformation_buffer+="\n";
-				fw2.write(userInformation_buffer);
-				fw2.close();
-				System.out.println("[Register Success!]");
-				return true;
-			}catch(IOException e){ 
+				FileWriter fw2;
+				try {
+					fw2 = new FileWriter("userInformation.txt");//write mode
+					userInformation_buffer+="\n";
+					fw2.write(userInformation_buffer);
+					fw2.close();
+					System.out.println("[Register Success!]");
+					return true;
+				} catch (IOException e1) {//about try in catch
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+					return false;
+				}//write mode
+			}catch(IOException e){ //about first try
 				e.printStackTrace(); 
 				return false;
 			}
 		}
 	}
 
-	public static boolean login() throws IOException{//throws because of Scanner
+	public static boolean login(){//throws because of Scanner
 		Scanner sc=new Scanner(System.in);
 		
 		System.out.println("Type yout Id: ");
@@ -278,27 +292,23 @@ class entry{
 		System.out.println("Type your Password: ");
 		String userInformation_buffer=new String(id+" "+sc.next());//"id password"
 		
+		String line;
 		try{
 			BufferedReader br=new BufferedReader(new FileReader("userInformation.txt"));
-			while(true){
-				String line=br.readLine();
-				//System.out.println(line+";"+userInformation_buffer);
-				if(line==null){
+			while((line=br.readLine())!=null){
+				if(line.equals(userInformation_buffer)){
 					br.close();
-					System.out.println("[Login Failed!] Information is not exist");
-					return false;
-				} else if(line.equals(userInformation_buffer)){
-					br.close();
-					System.out.println("[Login Success!] Welcome!");
-					//String userInfo=line.split(" ");//userInfo[0]: id, userInfo[1]: password
+					System.out.println("Login Success!");
 					return true;
 				}
 			}
+			br.close();
+			return false;
 		}catch(FileNotFoundException e){//no DB file
-			System.out.println("[Login Failed!] not exist DB. Try register first.");
+			System.out.println("register first");
 			return false;
 		}catch(IOException e){ 
-			e.printStackTrace(); 
+			e.printStackTrace();
 			return false;
 		}
 	}
@@ -317,12 +327,11 @@ class entry{
 					return true;
 				}
 			}
-		}catch(FileNotFoundException e){//No userinformation.txt -> first login before first register. 
-			System.out.println("Register first!");
-			e.printStackTrace();
-		}catch(IOException e){ e.printStackTrace(); }
-		
-		System.out.println("[Error Occur!] in isExistDB");
-		return false;
+		}catch(FileNotFoundException e){//No userinformation.txt -> first login before first register.
+			return false;//will be rechecked by next line of register
+		}catch(IOException e){ 
+			e.printStackTrace(); 
+			return false;
+		}
 	}
 }
