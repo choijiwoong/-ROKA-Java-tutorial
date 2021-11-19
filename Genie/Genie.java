@@ -45,27 +45,38 @@ public class Genie{
 	}
 }
 
-class playSong{
-	public static void playSong_execution(){
+class playSong {
+	public static void playSong_execution(){//Not bad to making by multi-thread
+		if(!playSongWork())
+			System.out.println("playSong .....Bad");
+		System.out.println("playSong .....Good");
+	}
+	
+	public static boolean playSongWork() {
 		int playlistSize=searchSong.getPlaylistSize();
 		if(playlistSize==0) {
 			System.out.println("No music in playlist!");
-			return;
+			return false;
 		}
 		
-		for(int i=1; i<=playlistSize; i++) {
+		for(int i=1; i<=playlistSize; i++) {//play all
 			try {
+				System.out.println("music."+i+" is starting...");
+				
 				File wavFile=new File("/playlist/Song"+i+".wav");
 				AudioInputStream wavStream=AudioSystem.getAudioInputStream(wavFile);
 				Clip wavClip=AudioSystem.getClip();
 				
 				wavClip.open(wavStream);
 				wavClip.start();
-				System.out.println("music."+i+" is starting...");
 				
 				Thread.sleep(wavClip.getMicrosecondLength()/1000);
-			}catch(Exception e) { e.printStackTrace(); }
+			}catch(Exception e) { 
+				e.printStackTrace();
+				return false;
+			}
 		}
+		return true;
 	}
 }
 
@@ -73,23 +84,31 @@ class searchSong{//use Jsoup
 	private static WebDriver driver;//for ChromeDriver object
 	private static int playlistSize=0;//number of songs is playlist
 	 public static int getPlaylistSize() { return playlistSize; }//return playlistsize for using in other class method.
-	private static String youtubeLink;//youtube like to searched video for using other method in this class
-	private static String downloadHtml=new String("https://loader.to/ko26/youtube-wav-converter.html");//we will use this site for downloading .wav file from youtube video
-	private static String youtubeSearch="https://www.youtube.com/results?search_query=";//use this url for search youtube video by word
+	private static String videoUrl;//youtube like to searched video for using other method in this class
+	private final static String downloadHtml=new String("https://loader.to/ko26/youtube-wav-converter.html");//we will use this site for downloading .wav file from youtube video
+	private final static String youtubeSearch_query="https://www.youtube.com/results?search_query=";//use this url for search youtube video by word
+	private final static String youtubeUrl="https://www.youtube.com/";
+	
+	private final static File dirDownload=new File("C:/Users/admin0!/Downloads");//change by UserName
+	private final static FilenameFilter filter=new FilenameFilter() {
+		public boolean accept(File f, String name) { 
+			return name.endsWith(".wav"); 
+		}
+	};
 	
 	public static void searchSong_execution(){
 		if(!search())
-			System.out.println("[Error in searchSong]");
+			System.out.println("searchSong .....Bad");
 		System.out.println("searchSong .....Good");
 		//set private youtubeLink
 		
 		if(!downloadSong())
-			System.out.println("[Error in downloadSong]");
+			System.out.println("downloadSong .....Bad");
 		System.out.println("downloadSong .....Good");
 		//.wav file is in C:\Users\admin0!\Downloads now.
 		
 		if(!movePlaylist())
-			System.out.println("[Error in movePlaylist]");
+			System.out.println("movPlaylist .....Bad");
 		System.out.println("movPlaylist .....Good");
 		//.wav file is in Genie/playlist/
 	}
@@ -97,7 +116,7 @@ class searchSong{//use Jsoup
 	public static boolean search(){
 			Scanner sc=new Scanner(System.in);
 			System.out.println("Enter title of song: ");
-			String searchWord=sc.next();
+			String searchWord=sc.next();//searchWord for search on youtube
 			
 			//***First*** FeedBack_Youtube uses CSR(Client-Side Rendering) not SSR(Server-Side Rendering). so use selenium that support Xpath regardless of excuting speed.
 			//System.out.println("searchWord: "+searchWord);
@@ -116,31 +135,32 @@ class searchSong{//use Jsoup
 			options.addArguments("--start-maximized");//monitor max
 			options.addArguments("--disable-popup-blocking");//no popup
 				
-			driver=new ChromeDriver(options);//Make Webdriver object!
+			driver=new ChromeDriver(options);//Make Webdriver object! **ERROR OCCUR**
 			try {
-				driver.get(youtubeSearch+searchWord);//List page of search word on youtube.
-				WebElement result=driver.findElement(By.xpath("//*[@id=\"video-title\"]"));//get element of first vedio-title's tag with like href="/watch?v=Nd-kL7Txqpk"
+				driver.get(youtubeSearch_query+searchWord);//List page of search word on youtube.
+				WebElement result=driver.findElement(By.xpath("//*[@id=\"video-title\"]"));//get element of first vedio-title's tag with like href="/watch?v=Nd-kL7Txqpk".
+				//result has information of href that points first element link of search list
 				if(result!=null)
 					System.out.println(result);
 			} catch(Exception e){
 				e.printStackTrace();
 				return false;
 			}finally { driver.quit(); }
-				
 			//Proecess of result to get href to first video-title link. like href="/watch?v=Nd-kL7Txqpk"
-				
-			String videoLink=new String();//like "ND-kL7Txqpk"
-			youtubeLink=new String("https://www.youtube.com/"+videoLink);//set private variable
+			String videoLink=new String();//Suppose like "ND-kL7Txqpk"
+			videoUrl=new String(youtubeUrl+videoLink);//set private variable
 	
 			return true;
 	}
 	
 	public static boolean downloadSong(){
-		if(youtubeLink==null) {//check is ready for download
+		if(videoUrl==null) {//check is ready for download
 			try {
 				throw new Exception("YoutubeLink is not sent!");
-			}catch(Exception e) {e.printStackTrace();}
-			return false;
+			}catch(Exception e) {
+				e.printStackTrace();
+				return false;
+			}
 		}
 		ChromeOptions options=new ChromeOptions();
 		options.addArguments("--start-maximized");
@@ -149,15 +169,27 @@ class searchSong{//use Jsoup
 		driver=new ChromeDriver(options);
 		try {
 			driver.get(downloadHtml);
+			//below process is only working on downloadHtml's content(download site's Xpath is used)
 			WebElement inputURL=driver.findElement(By.xpath("//*[@id=\"link\"]"));
-			inputURL.sendKeys(youtubeLink);
+			inputURL.sendKeys(videoUrl);//input vedioUrl that we want to convert to .wav
 			WebElement convertStartButton=driver.findElement(By.xpath("//*[@id=\"load\"]"));
-			convertStartButton.click();
+			convertStartButton.click();//convert start
 			
 			Thread.sleep(10000);//convert time
-			WebElement downloadStartButton=driver.findElement(By.xpath("//*[@id=\"7046dfee98b0d1a28798a0c94c9_downloadButton\"]"));
-			downloadStartButton.click();
-			Thread.sleep(30000);//download time
+			File files[]=dirDownload.listFiles();//Save first element of Download directory. for notifying download's end by compare buffer's File & now File
+			File buffer=files[0];
+			WebElement downloadStartButton=driver.findElement(By.xpath("//*[@id=\"7046dfee98b0d1a28798a0c94c9_downloadButton\"]"));//***is it final with other video?****
+			downloadStartButton.click();//downloading start!
+			System.out.print("downloading");
+			while(true) {
+				System.out.print(".");
+				files=dirDownload.listFiles(filter);
+				if(files[0].equals(buffer))
+					break;
+				Thread.sleep(3000);//check by 3seconds
+			}
+			System.out.println("Download Complete!");
+			//Thread.sleep(30000);//download time
 			//****third feedback****
 			//check download by download's file list[0] element's name compare not sleep;
 		}catch (Exception e) {
@@ -169,16 +201,7 @@ class searchSong{//use Jsoup
 	}
 	
 	public static boolean movePlaylist() {
-		//get .mp3 file to File object
-		File dir=new File("C:\\Users\\admin0!\\Downloads");//change by UserName
-		FilenameFilter filter=new FilenameFilter() {
-			public boolean accept(File f, String name) {
-				return name.endsWith(".wav");
-			}
-		};//for some of accuracy
-		File files[]=dir.listFiles(filter);
-		//our downloaded song object is in files[0] now.
-		
+		File files[]=dirDownload.listFiles(filter);//for get first element of Download directory(new added .wav file)
 		
 		//copy to playlist directory of Genie
 		if(files[0]!=null) {
@@ -191,7 +214,7 @@ class searchSong{//use Jsoup
 					e.printStackTrace();
 					return false;
 				}
-			}
+			}//playlist dir must exist now 
 			
 			//copy by stream
 			File newFile=new File(new String("C:/Users/admin0!/Desktop/_2jimo/Java/Genie/Geniw/src/Playlist/Song"+(++playlistSize)+".wav"));
@@ -213,8 +236,11 @@ class searchSong{//use Jsoup
 			}
 		}else {
 			try {
-				throw new Exception("No mp3 file in download file");
-			}catch(Exception e) {e.printStackTrace();}
+				throw new Exception("No mp3 file in download file_Download is not completed!");
+			}catch(Exception e) {
+				e.printStackTrace(); 
+				return false;
+			}
 		}
 		return true;
 	}
@@ -273,7 +299,6 @@ class entry{
 					System.out.println("[Register Success!]");
 					return true;
 				} catch (IOException e1) {//about try in catch
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 					return false;
 				}//write mode
@@ -298,7 +323,7 @@ class entry{
 			while((line=br.readLine())!=null){
 				if(line.equals(userInformation_buffer)){
 					br.close();
-					System.out.println("Login Success!");
+					System.out.println("Login Success!\n");
 					return true;
 				}
 			}
