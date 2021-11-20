@@ -11,7 +11,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;//selenium
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-
 import org.openqa.selenium.WebDriver;
 import java.io.File;//mkdir, copy song to playlist
 import java.io.FileInputStream;
@@ -49,7 +48,8 @@ class playSong {
 	public static void playSong_execution(){//Not bad to making by multi-thread
 		if(!playSongWork())
 			System.out.println("playSong .....Bad");
-		System.out.println("playSong .....Good");
+		else
+			System.out.println("playSong .....Good");
 	}
 	
 	public static boolean playSongWork() {
@@ -99,17 +99,20 @@ class searchSong{//use Jsoup
 	public static void searchSong_execution(){
 		if(!search())
 			System.out.println("searchSong .....Bad");
-		System.out.println("searchSong .....Good");
+		else
+			System.out.println("searchSong .....Good");
 		//set private youtubeLink
 		
 		if(!downloadSong())
 			System.out.println("downloadSong .....Bad");
-		System.out.println("downloadSong .....Good");
+		else
+			System.out.println("downloadSong .....Good");
 		//.wav file is in C:\Users\admin0!\Downloads now.
 		
 		if(!movePlaylist())
 			System.out.println("movPlaylist .....Bad");
-		System.out.println("movPlaylist .....Good");
+		else
+			System.out.println("movPlaylist .....Good");
 		//.wav file is in Genie/playlist/
 	}
 	
@@ -129,12 +132,15 @@ class searchSong{//use Jsoup
 			//Caused by: java.nio.file.NoSuchFileException: C:\Users\admin0
 			//just do continue, this error will be handled in weekend.
 			
+			//***fourth*** FeedBack_use firefoxdriver not chrome
+			//same error occur
+			
 			String path=System.getProperty("user.dir");//get this_path(preparing execution of chromedriver)
 			System.setProperty("webdriver.chrome.driver", path+"/src/ChromeWebdriver/chromedriver.exe");//set chromedriver's location
 			ChromeOptions options=new ChromeOptions();//make options object for argument of ChromeDriver's constructor
 			options.addArguments("--start-maximized");//monitor max
 			options.addArguments("--disable-popup-blocking");//no popup
-				
+			
 			driver=new ChromeDriver(options);//Make Webdriver object! **ERROR OCCUR**
 			try {
 				driver.get(youtubeSearch_query+searchWord);//List page of search word on youtube.
@@ -286,7 +292,7 @@ class entry{
 				userInformation_buffer+="\n";
 				fw.write(userInformation_buffer);
 				fw.close();
-				System.out.println("[Register Success!]");
+				System.out.println("[Register Success!]\n");
 				return true;
 			}catch(FileNotFoundException e){//file is not exist(cannot use append mode)
 				//make file.
@@ -296,7 +302,7 @@ class entry{
 					userInformation_buffer+="\n";
 					fw2.write(userInformation_buffer);
 					fw2.close();
-					System.out.println("[Register Success!]");
+					System.out.println("[Register Success!]\n");
 					return true;
 				} catch (IOException e1) {//about try in catch
 					e1.printStackTrace();
@@ -328,6 +334,7 @@ class entry{
 				}
 			}
 			br.close();
+			System.out.println("cannot find user information!\n");
 			return false;
 		}catch(FileNotFoundException e){//no DB file
 			System.out.println("register first");
