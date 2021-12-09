@@ -63,6 +63,11 @@ public class tutorial{
 		
 		
 		System.out.println("\n\n[p.970]");//chatting program by make Sender, Receiver class
+		//By using Sender & Receiver, both server & client can write or read msg each other.
+		//they use IOStream of socket. Sender & Receiver is extending Thread class, so it can handle msg seperately.
+		
+		
+		System.out.println("\n\n[p.972]");//MultichatServer program
 	}//main
 }//tutorial
 
@@ -183,18 +188,22 @@ class TcpIpServer2 implements Runnable{//p.949_multi-thread SocketProgramming
 class TcpIpServer3{//p.970 chatting program
 	public static void main(String args[]) {
 		ServerSocket serverSocket=null;
-		Socket socket=null;
+		Socket socket=null;//Make ServerSocket & Socket
 		
 		try {
-			serverSocket=new ServerSocket(7777);
+			serverSocket=new ServerSocket(7777);//Make ServerSocket with port binding
 			System.out.println("Server is ready.");
 			
-			socket=serverSocket.accept();
+			socket=serverSocket.accept();//wait request for connection to client
 			
-			Sender sender=new Sender(socket);
+			Sender sender=new Sender(socket);//If request is occcur, pass socket to Sender & Receiver
+			//In Sender, initialize DateOutputStream to socket. In run(), make Scanner for getting user inut and write UserInput to DataOutputStream 
 			Receiver receiver=new Receiver(socket);
+			//In Receiver, initialize DataInputStream to socket. In run(), just read UTF of DataInputStream.
 			
-			sender.start();
+			//So In Server, start Sender(write) & Receiver(read) to socket's IOStream.
+			
+			sender.start();//and Start
 			receiver.start();
 		}catch(Exception e) { e.printStackTrace(); }
 	}
@@ -245,13 +254,13 @@ class TcpIpClient3{
 	public static void main(String args[]) {
 		try {
 			String serverIp="127.0.0.1";
-			Socket socket=new Socket(serverIp, 7777);
+			Socket socket=new Socket(serverIp, 7777);//try connect to Server
 			System.out.println("Server is connected");
 			
-			Sender sender=new Sender(socket);
+			Sender sender=new Sender(socket);//get Sender and Receiver.
 			Receiver receiver=new Receiver(socket);
 			
-			sender.start();
+			sender.start();//and start
 			receiver.start();
 		}catch(ConnectException ce) {
 			ce.printStackTrace();
@@ -264,33 +273,33 @@ class TcpIpClient3{
 }
 
 
-class TcpIpMultichatServer{
-	HashMap clients;
+class TcpIpMultichatServer{//p.972
+	HashMap clients;//for saving clients information
 	
 	TcpIpMultichatServer(){
 		clients=new HashMap();
-		Collections.synchronizedMap(clients);
+		Collections.synchronizedMap(clients);//make HashMap to synchronizedMap
 	}
 	
 	public void start() {
-		ServerSocket serverSocket=null;
+		ServerSocket serverSocket=null;//Make ServerSocket, Socket
 		Socket socket=null;
 		
 		try {
-			serverSocket=new ServerSocket(7777);
+			serverSocket=new ServerSocket(7777);//binding
 			System.out.println("Server start");
 			
 			while(true) {
-				socket=serverSocket.accept();
+				socket=serverSocket.accept();//wait request
 				System.out.println("["+socket.getInetAddress()+": "+socket.getPort()+"] is connected!");
 				
-				ServerReceiver thread=new ServerReceiver(socket);
+				ServerReceiver thread=new ServerReceiver(socket);//make ServerReceiver with socket and Start
 				thread.start();
 			}
 		}catch(Exception e) { e.printStackTrace(); }
 	}
 	
-	void sendToAll(String msg) {
+	void sendToAll(String msg) {//Send msg to All client by using client's DataOutputStream on HashMap
 		Iterator it=clients.keySet().iterator();
 		
 		while(it.hasNext()) {
@@ -302,10 +311,10 @@ class TcpIpMultichatServer{
 	}
 	
 	public static void main(String args[]) {
-		new TcpIpMultichatServer().start();
+		new TcpIpMultichatServer().start();//run
 	}
 	
-	class ServerReceiver extends Thread{
+	class ServerReceiver extends Thread{//Thread!_When request occur, make it and run per one request. it works on one socket of client.
 		Socket socket;
 		DataInputStream in;
 		DataOutputStream out;
@@ -313,7 +322,7 @@ class TcpIpMultichatServer{
 		ServerReceiver(Socket socket){
 			this.socket=socket;
 			try {
-				in=new DataInputStream(socket.getInputStream());
+				in=new DataInputStream(socket.getInputStream());//connect to client's IOStream
 				out=new DataOutputStream(socket.getOutputStream());
 			}catch(IOException e) {}
 		}
@@ -322,18 +331,19 @@ class TcpIpMultichatServer{
 			String name="";
 			
 			try {
-				name=in.readUTF();
+				name=in.readUTF();//get Name first
 				sendToAll("#"+name+"is entered");
 				
 				clients.put(name,  out);
 				System.out.println("Current people: "+clients.size());
 				
 				while(in!=null) {
-					sendToAll(in.readUTF());
+					sendToAll(in.readUTF());//read msg on InputStream & sent To All by using clients
+					//sendToAll that msg server read
 				}
 			}catch(IOException e) {
 				//ignore
-			}finally {
+			}finally {//if serverReceiver's done ??
 				sendToAll("#"+name+"is exited");
 				clients.remove(name);
 				System.out.println("["+socket.getInetAddress()+": "+socket.getPort()+"] is finish connection");
@@ -352,13 +362,13 @@ class TcpIpMulticharClient{
 		
 		try {
 			String serverIp="127.0.0.1";
-			Socket socket=new Socket(serverIp, 7777);
+			Socket socket=new Socket(serverIp, 7777);//make request
 			System.out.println("Server connected");
 			
-			Thread sender=new Thread(new ClientSender(socket, args[0]));
+			Thread sender=new Thread(new ClientSender(socket, args[0]));//make ClientSender & ClientReceiver to Thread with socket
 			Thread receiver=new Thread(new ClientReceiver(socket));
 			
-			sender.start();
+			sender.start();//run
 			receiver.start();
 		}catch(ConnectException ce) {
 			ce.printStackTrace();
@@ -373,7 +383,7 @@ class TcpIpMulticharClient{
 		ClientSender(Socket socket, String name){
 			this.socket=socket;
 			try {
-				out=new DataOutputStream(socket.getOutputStream());
+				out=new DataOutputStream(socket.getOutputStream());//get socket's output
 				this.name=name;
 			}catch(Exception e) {}
 		}
@@ -382,9 +392,9 @@ class TcpIpMulticharClient{
 			Scanner scanner=new Scanner(System.in);
 			try {
 				if(out!=null)
-					out.writeUTF(name);
+					out.writeUTF(name);//write name first
 				while(out!=null)
-					out.writeUTF("["+name+"]"+scanner.nextLine());
+					out.writeUTF("["+name+"]"+scanner.nextLine());//write content
 			}catch(IOException e) {}
 		}
 	}
@@ -396,18 +406,18 @@ class TcpIpMulticharClient{
 		ClientReceiver(Socket socket){
 			this.socket=socket;
 			try {
-				in=new DataInputStream(socket.getInputStream());
+				in=new DataInputStream(socket.getInputStream());//get inputstream
 			}catch(IOException e) {}
 		}
 		
 		public void run() {
 			while(in!=null) {
 				try {
-					System.out.println(in.readUTF());
+					System.out.println(in.readUTF());//read all & print
 				}catch(IOException e) {}
 			}
 		}
 	}
 	
 	
-}
+}                       
